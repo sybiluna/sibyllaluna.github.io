@@ -190,16 +190,10 @@
             box-shadow: var(--card-shadow);
             position: relative;
         }
-        .title-label {
-            display: inline-flex;
-            align-items: center;
-            background: linear-gradient(135deg, #1976d2 0%, #0d47a1 100%);
-            color: white;
-            padding: 6px 8px;
-            border-radius: 20px;
-            font-size: 14px;
+        .title-icon {
+            color: var(--primary);
+            font-size: 24px;
             margin-right: 12px;
-            font-weight: 500;
         }
         .post-title {
             font-size: 24px;
@@ -435,7 +429,7 @@
                         <li>回帖使用"#数字"格式标记楼层，如#1、#2</li>
                         <li>使用"@admin"标记管理员回复</li>
                         <li>使用"@楼主"标记楼主回复</li>
-                        <li>使用">开头的内容表示引用回复，需要手动在后面空一格并加上引用楼层内容</li>
+                        <li>使用">开头的内容表示引用回复，注意空格后直接输入回复内容，换行会不显示引用内容</li>
                         <li>勾选"不显示点赞点踩功能"可隐藏互动按钮</li>
                         <li>勾选"不显示点赞点踩颜色"可去除按钮颜色</li>
                         <li>点击"导出图片"可将论坛内容保存为图片</li>
@@ -448,7 +442,7 @@
                 <div id="forum-preview" class="forum-container">
                     <div class="main-post">
                         <div class="post-title">
-                            <span class="title-label"><i class="ri-article-line"></i></span>
+                            <i class="ri-article-line title-icon"></i>
                             标题将显示在这里
                         </div>
                         <div class="post-meta">
@@ -706,7 +700,7 @@
                 
                 mainPostDiv.innerHTML = `
                     <div class="post-title">
-                        <span class="title-label"><i class="ri-article-line"></i></span>
+                        <i class="ri-article-line title-icon"></i>
                         ${title}
                     </div>
                     <div class="post-meta">
@@ -869,6 +863,7 @@
 #5
 明白了，谢谢解答！`;
             
+            // 初始生成
             parseForumContent();
         });
     </script>
