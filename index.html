@@ -49,13 +49,7 @@
         }
         h1 {
             font-size: 2.2rem;
-            margin-bottom: 10px;
             font-weight: 700;
-        }
-        .subtitle {
-            font-size: 1.1rem;
-            opacity: 0.9;
-            font-weight: 300;
         }
         .main-content {
             display: flex;
@@ -201,15 +195,11 @@
             align-items: center;
             background: linear-gradient(135deg, #1976d2 0%, #0d47a1 100%);
             color: white;
-            padding: 6px 12px;
+            padding: 6px 8px;
             border-radius: 20px;
             font-size: 14px;
             margin-right: 12px;
             font-weight: 500;
-        }
-        .title-label i {
-            margin-right: 6px;
-            font-size: 14px;
         }
         .post-title {
             font-size: 24px;
@@ -445,8 +435,7 @@
                         <li>回帖使用"#数字"格式标记楼层，如#1、#2</li>
                         <li>使用"@admin"标记管理员回复</li>
                         <li>使用"@楼主"标记楼主回复</li>
-                        <li>使用">内容"格式添加引用回复</li>
-                        <li>使用">#数字"格式引用特定楼层</li>
+                        <li>使用">开头的内容表示引用回复，需要手动在后面空一格并加上引用楼层内容</li>
                         <li>勾选"不显示点赞点踩功能"可隐藏互动按钮</li>
                         <li>勾选"不显示点赞点踩颜色"可去除按钮颜色</li>
                         <li>点击"导出图片"可将论坛内容保存为图片</li>
@@ -459,7 +448,7 @@
                 <div id="forum-preview" class="forum-container">
                     <div class="main-post">
                         <div class="post-title">
-                            <span class="title-label"><i class="ri-article-line"></i>标题</span>
+                            <span class="title-label"><i class="ri-article-line"></i></span>
                             标题将显示在这里
                         </div>
                         <div class="post-meta">
@@ -516,6 +505,9 @@
             const hideVoteColorsCheckbox = document.getElementById('hide-vote-colors');
             const exportNotice = document.getElementById('export-notice');
             
+            // 存储所有帖子的内容，用于引用功能
+            let allPostsContent = {};
+            
             // 生成精确时间点序列
             function generateTimeSequence(postCount) {
                 const times = [];
@@ -548,39 +540,37 @@
             }
             
             // 解析引用内容
-            function parseQuotes(content) {
+            function parseQuotes(content, currentFloor) {
                 const lines = content.split('\n');
                 let result = '';
-                let inQuote = false;
-                let quoteContent = '';
                 
                 for (let line of lines) {
-                    if (line.startsWith('>')) {
-                        if (!inQuote) {
-                            inQuote = true;
-                            result += '<div class="quote">';
-                        }
-                        // 检查是否是引用作者
-                        const authorMatch = line.match(/^>#(\d+)/);
-                        if (authorMatch) {
-                            quoteContent += `<div class="quote-author">引用 #${authorMatch[1]}:</div>`;
-                            quoteContent += line.substring(authorMatch[0].length + 1) + '<br>';
+                    if (line.startsWith('>#')) {
+                        // 提取引用的楼层号
+                        const quoteMatch = line.match(/^>#(\d+)\s+(.*)/);
+                        if (quoteMatch) {
+                            const quotedFloor = quoteMatch[1];
+                            const quoteText = quoteMatch[2];
+                            
+                            // 获取被引用的内容
+                            const quotedContent = allPostsContent[quotedFloor] || "内容已被删除";
+                            
+                            result += `<div class="quote">
+                                <div class="quote-author">引用 #${quotedFloor}:</div>
+                                ${quotedContent}
+                            </div>`;
+                            
+                            // 添加引用文本（如果有）
+                            if (quoteText) {
+                                result += `${quoteText}<br>`;
+                            }
                         } else {
-                            quoteContent += line.substring(1).trim() + '<br>';
+                            // 普通引用格式
+                            result += `<div class="quote">${line.substring(1)}</div>`;
                         }
                     } else {
-                        if (inQuote) {
-                            inQuote = false;
-                            result += quoteContent + '</div>';
-                            quoteContent = '';
-                        }
                         result += line + '<br>';
                     }
-                }
-                
-                // 处理最后可能还在引用中的内容
-                if (inQuote) {
-                    result += quoteContent + '</div>';
                 }
                 
                 return result;
@@ -595,6 +585,10 @@
                 const hideVoteColors = hideVoteColorsCheckbox.checked;
                 
                 forumPreview.innerHTML = '';
+                allPostsContent = {};
+                
+                // 存储主楼内容
+                allPostsContent['main'] = mainContent;
                 
                 if (!title && !mainContent && !repliesContent) {
                     // 默认空内容显示
@@ -629,6 +623,9 @@
                                     content: currentContent.join('\n'),
                                     type: currentType
                                 });
+                                
+                                // 存储帖子内容用于引用
+                                allPostsContent[currentFloor] = currentContent.join('\n');
                             }
                             
                             // 开始新楼层
@@ -662,6 +659,9 @@
                             content: currentContent.join('\n'),
                             type: currentType
                         });
+                        
+                        // 存储帖子内容用于引用
+                        allPostsContent[currentFloor] = currentContent.join('\n');
                     }
                 }
                 
@@ -706,7 +706,7 @@
                 
                 mainPostDiv.innerHTML = `
                     <div class="post-title">
-                        <span class="title-label"><i class="ri-article-line"></i>标题</span>
+                        <span class="title-label"><i class="ri-article-line"></i></span>
                         ${title}
                     </div>
                     <div class="post-meta">
@@ -736,7 +736,7 @@
                 }
                 
                 // 处理引用内容
-                const formattedContent = parseQuotes(content);
+                const formattedContent = parseQuotes(content, floor);
                 
                 const actionsHtml = hideVotes ? '' : `
                     <div class="post-actions">
